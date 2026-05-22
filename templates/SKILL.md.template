@@ -1,0 +1,32 @@
+---
+name: my-skill-name
+description: 一句话描述这个 skill 在什么场景下应该被触发。要包含具体的触发词或意图，例如 "when the user asks to X, Y, or mentions Z"。description 是 agent 判断是否调用此 skill 的唯一依据，必须具体、可检索。
+---
+
+# My Skill Name
+
+## When to Use This Skill
+
+- 列出用户的典型请求形式
+- 列出关键词与意图
+- 明确边界：什么时候**不**应该使用这个 skill
+
+## What This Skill Does
+
+简短说明本 skill 提供的能力 / 工作流 / 输出物。
+
+## Instructions
+
+具体的执行指令、检查清单或步骤。可以包含：
+
+1. 步骤一
+2. 步骤二
+3. 步骤三
+
+## Examples
+
+可选：给出 1–2 个调用示例与期望输出。
+
+## Notes
+
+可选：边界条件、已知限制、相关 skill 的交叉引用。
