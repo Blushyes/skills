@@ -27,16 +27,27 @@ npx skills add Blushyes/skills -a claude-code
 
 ```
 skills/
-├── skills/             # 所有可安装的 skill 都放在这里
-│   └── <skill-name>/
-│       └── SKILL.md    # 必需：带 frontmatter 的 skill 入口文件
+├── skills/                  # 所有可安装的 skill 都放在这里
+│   └── <category>/          # 按主题分类的目录（如 design、dev、ops...）
+│       └── <skill-name>/
+│           └── SKILL.md     # 必需：带 frontmatter 的 skill 入口文件
 ├── templates/
-│   └── SKILL.md.template  # 新建 skill 时可拷贝的模板
+│   └── SKILL.md.template    # 新建 skill 时可拷贝的模板
 ├── LICENSE
 └── README.md
 ```
 
-每个 skill 是 `skills/<skill-name>/` 下的一个目录，至少包含一个 `SKILL.md`，其 frontmatter 必须含 `name` 与 `description` 两个字段。
+每个 skill 是 `skills/<category>/<skill-name>/` 下的一个目录，至少包含一个 `SKILL.md`，其 frontmatter 必须含 `name` 与 `description` 两个字段。
+
+> **注意**：`skills.sh` CLI 默认按 `skills/*/SKILL.md` 一层结构发现。本仓库采用了两层分类目录，安装时需要使用 `--full-depth` 选项或子路径 URL：
+>
+> ```bash
+> # 直接指向 skill 子路径（推荐）
+> npx skills add https://github.com/Blushyes/skills/tree/main/skills/design/shadow-design
+>
+> # 或使用 full-depth 发现
+> npx skills add Blushyes/skills --full-depth
+> ```
 
 ## 新建一个 skill
 
@@ -53,7 +64,9 @@ cp -r templates/SKILL.md.template skills/<skill-name>/SKILL.md
 
 <!-- skills-list:start -->
 
-骨架阶段，逐步添加中。
+### 🎨 design
+
+- [**shadow-design**](./skills/design/shadow-design/SKILL.md) — CSS 阴影/elevation 设计指南：四条铁律、5 种性格配方（uniform/sharp/diffuse/dreamy/floating）、完整 elevation token、dark mode 三方案、反模式清单
 
 <!-- skills-list:end -->
 
