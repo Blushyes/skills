@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prompt Seat"
+  short_description: "用主位/前排/后排整理生图 prompt 主次关系"
+  default_prompt: "Use $prompt-seat to rewrite this image prompt into a clear main-seat, front-row, back-row, and exclusion structure."
