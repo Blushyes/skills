@@ -1,0 +1,4 @@
+interface:
+  display_name: "Real Light Image Prompts"
+  short_description: "Real-photo lighting prompt templates"
+  default_prompt: "Use $real-light-image-prompts to make this image prompt feel like a real phone photo."
