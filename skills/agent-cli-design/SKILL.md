@@ -48,7 +48,7 @@ token 就是从「查询」流向下一次「变更」的东西。所以查询�
 
 | 档 | 形态 | 用于 |
 |---|---|---|
-| 默认 | 简洁文本（行式、地址单独成列） | **agent 自己的 read→decide 循环** + 人扫一眼；便宜 |
+| 默认 | 按数据形状输出简洁文本：同构二维数据用带表头 TSV；单对象用紧凑 `key=value`；正文原样输出 | **agent 自己的 read→decide 循环** + 人扫一眼；便宜 |
 | `--json` | 结构化信封 + `rows[]` 数组（addr/type/… 各为字段） | *程序*（jq / 脚本 / MCP host 的结构化 tool）做确定性解析 —— **不是** agent 喂自己的下一步 |
 | `--format addr`（或 `-0`） | 裸的、换行/NUL 分隔的地址流 | 喂 xargs 或批量构造器 —— *只要货币，不让正文再进 context* |
 
@@ -65,9 +65,32 @@ agent 的「消费者」不是 `JSON.parse` 的程序，而是把你的输出读
 前提错套到「LLM 消费者」身上 —— 这是 agent-facing CLI 最常见、最隐蔽的设计错误之一（连"机器就该
 输出 JSON"的肌肉记忆都会把你带过去）。
 
-**但简洁文本 ≠ 一团散文。** 它必须 *行式、字段稳定*：地址单独成列、一行一条，让 LLM 不靠脆弱
-解析就能逐条抬起地址（呼应原则 1）。同时别走反面 —— 逼 agent 把一墙正文重灌进 context 只为捞一个
-它早算好的 id。简洁文本要同时满足：**人/LLM 直觉可读、地址机器可抬、正文按需付费**。
+**同构二维数据默认用带表头 TSV。** 当一个命令返回多条同 schema 记录（典型是
+`list` / `search` / `doctor` / 状态矩阵），TSV 比逐行 `key=value` 更省 token：字段名只在表头出现
+一次；也比终端对齐表格更稳定，因为列边界是 tab，不依赖空格宽度。比如：
+
+```tsv
+addr	provider	kind	model	maturity
+qiling:image:nano-banana-2	qiling	image	nano-banana-2	documented
+chatfire:image:gpt-image-1.5	chatfire	image	gpt-image-1.5	documented
+```
+
+实现 TSV 时遵守这些规则：
+
+- **表头是 schema。** 使用稳定的 `snake_case` 列名和固定列序；即使结果为零行也输出表头。把
+  `addr` / `id` 放在独立列里，通常放第一列。
+- **stdout 只装 TSV。** 不混入标题、计数、空行、`next:`、进度或诊断；把这些写到 stderr，或放进
+  `--json` 的 metadata。这样 `cut` / `awk` / CSV reader 可以直接消费 stdout。
+- **颜色只属于交互式表头。** 仅在 stdout 是 TTY 且未设置 `NO_COLOR` 时给表头加 ANSI；管道、
+  重定向和非 TTY 输出必须是无 ANSI 的纯 TSV。
+- **用合规的 CSV/TSV writer 转义。** 字段含 tab、换行或双引号时按 RFC 4180 风格加引号和转义，
+  不用裸 `join("\t")`。短小、值域受控的标量列表可在单元格内用逗号连接；嵌套对象、异构记录和长
+  多行正文改用 `--json` 或更窄的 exact-read 命令。
+- **同一份 rows 驱动 TSV 与 JSON。** 为表格声明列序，由 renderer 从结构化 `rows[]` 取值；不要在
+  handler 里维护一套 TSV 字符串、另一套 JSON row，避免字段与默认值漂移。
+
+**简洁文本仍按数据形状选择。** 单个对象或一次 mutation 的结果用一行紧凑 `key=value`；自然语言
+正文按原样输出；同构二维记录用 TSV。三者都要字段稳定、地址可直接抬起、正文按需付费。
 
 **3. `--help` 是导航，不是手册。** 顶层 help 只负责让 agent 快速选对下一条命令：usage 形状、
 主要分组、命令名列表、全局输出/目标 flag，以及「继续看哪个子命令 help」的指针。不要在顶层内联

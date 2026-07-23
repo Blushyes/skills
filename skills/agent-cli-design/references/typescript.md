@@ -123,6 +123,7 @@ export interface Report {
   title?: string; op?: string; changed?: boolean; summary?: string;
   result?: string[];                        // human lines
   rows?: Array<Record<string, unknown>>;    // structured: { addr, type, ... } per row
+  columns?: string[];                       // stable TSV order when rows are a 2D table
   issues?: string[]; next?: string[];
   [key: string]: unknown;                   // index sig → attach fields freely; JSON passes them through
 }
@@ -141,9 +142,17 @@ export function emit(report: Report, exitCode: number, jsonMode: boolean, format
     process.stdout.write(JSON.stringify({ ...report, exit_code: exitCode, ok: exitCode === EXIT_OK }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(renderText(report, exitCode));   // terse bulleted text
+  if (report.columns && report.rows) {
+    process.stdout.write(renderTsv(report.columns, report.rows)); // same rows as JSON; hints go to stderr
+    return;
+  }
+  process.stdout.write(renderText(report, exitCode));   // compact single-object/body text
 }
 ```
+
+`renderTsv` 按 SKILL 第 1 部分实现：使用成熟的 CSV/TSV encoder、固定列序、零行仍打印表头；
+只在 `process.stdout.isTTY && !process.env.NO_COLOR` 时着色表头。标题、计数、`next`、进度和诊断写
+stderr，确保管道拿到纯 TSV。
 
 ## 5. The dispatch harness
 
