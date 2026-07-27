@@ -9,7 +9,7 @@ agent-facing CLI 泛化而来。
 3. [错误类型 —— `CliError`](#3-the-error-type--clierror)
 4. [输出信封 —— `Report` + `emit`（text / json / addr）](#4-the-output-envelope)
 5. [dispatch harness](#5-the-dispatch-harness)
-6. [Option mixins（`withCommonOpts`、`withSelection`）](#6-option-mixins)
+6. [声明式命令与 Option mixins](#6-declarative-commands-and-option-mixins)
 7. [selector：语法、解析器、共享 resolver](#7-the-selector)
 8. [selector-edit runner（dry-run / --apply / blast radius）](#8-the-selector-edit-runner)
 9. [op 引擎：dispatch map（不是 1000 行 if/else）](#9-the-op-engine-dispatch-map)
@@ -201,30 +201,66 @@ export async function main(argv: string[]): Promise<number> {
 }
 ```
 
-## 6. Option mixins
+## 6. Declarative commands and option mixins
 
-别在 40 个命令里重复声明 option —— 组合它们。两个大头：通用 IO flag，以及 **读写共享的选择
-flag**（SKILL 第 2 部分）。
+命令注册处就是文档源：在同一条声明上写 argument、长短 option 和描述，再让 Commander 生成
+标准 help。不要维护独立 help map。
 
 ```ts
 // cli.ts
 function withCommonOpts(cmd: Command): Command {
-  return cmd.option("--json").option("--path <p>").option("--dry-run").option("--apply");
+  return cmd
+    .option("-j, --json", "Emit structured JSON")
+    .option("-p, --path <file>", "Read and write this document")
+    .option("-n, --dry-run", "Preview without writing");
 }
-// the SAME flags drive `list` (read) and `set-type` (write):
 function withSelection(cmd: Command): Command {
   return cmd
-    .option("--in <selector>")   // single | a..b | a..b,c..d | '*'
-    .option("--type <t>")        // predicate
-    .option("--owner <id>")      // predicate
-    .option("--grep <re>")       // pattern
-    .option("--has <facet>");    // predicate
+    .option("-i, --in <selector>", "Select an address, range, list, or '*'")
+    .option("-t, --type <type>", "Select items of this type")
+    .option("--owner <id>", "Select items owned by this entity")
+    .option("-g, --grep <pattern>", "Select content matching this pattern")
+    .option("--has <facet>", "Select items containing this facet");
 }
-// query AND write verbs both get it:
-withSelection(withCommonOpts(program.command("list"))).action(dispatch(commandList, state));
-withSelection(withCommonOpts(program.command("set-type [at] [value]"))).action(dispatch(commandSetType, state));
+
+withSelection(
+  withCommonOpts(
+    program.command("list")
+      .description("List matching items"),
+  ),
+).action(dispatch(commandList, state));
+
+withSelection(
+  withCommonOpts(
+    program.command("set-type")
+      .description("Set the type of one or more items")
+      .argument("[at]", "Exact address for a single-item edit")
+      .argument("[value]", "Type to assign")
+      .option("--apply", "Write a multi-item preview"),
+  ),
+).action(dispatch(commandSetType, state));
 ```
-注意写动词上的 `[at]` 是 **可选** 的：给了 → 单点；没给 + 选择 flag → sweep。
+
+别在 40 个命令里重复声明 option —— 组合它们。两个大头是通用 IO flag，以及 **读写共享的选择
+flag**（SKILL 第 2 部分）。共享 mixin 集中管理短名，防止同一 command 作用域内冲突。写动词上的
+`[at]` 是 **可选** 的：给了 → 单点；没给 + 选择 flag → sweep。
+
+Commander 自带 `-h, --help`。version 显式声明并遵循 Commander 生态的 `-V`：
+
+```ts
+program
+  .name("mytool")
+  .description("Inspect and edit documents")
+  .version(pkg.version, "-V, --version", "Print version");
+```
+
+为命令元数据增加测试：递归遍历 `program.commands`，断言所有可见命令、argument、option 都有
+description，且每个 command 作用域内的 short flag 唯一。短名与长名还要各跑一条 E2E，断言输出、
+退出码和副作用相同。
+
+shell completion 也从 `Command` 树生成。若采用第三方 generator，先验证它读取 Commander 的
+subcommand/option 元数据，而不是要求维护第二份命令列表。安装包可以把生成文件安装到标准 completion
+目录；修改 `.zshrc` / `.bashrc` 时必须使用显式、幂等、可识别并可移除的安装步骤。
 
 ## 7. The selector
 
