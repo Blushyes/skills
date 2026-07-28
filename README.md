@@ -26,7 +26,7 @@ npx skills add Blushyes/skills -a claude-code
 ## 仓库结构
 
 ```
-skills/
+.
 ├── skills/                  # 所有可安装的 skill 都放在这里
 │   └── <category>/          # 按主题分类的目录（如 design、dev、ops...）
 │       └── <skill-name>/
@@ -39,13 +39,13 @@ skills/
 
 每个 skill 是 `skills/<category>/<skill-name>/` 下的一个目录，至少包含一个 `SKILL.md`，其 frontmatter 必须含 `name` 与 `description` 两个字段。
 
-> **注意**：`skills.sh` CLI 默认按 `skills/*/SKILL.md` 一层结构发现。本仓库采用了两层分类目录，安装时需要使用 `--full-depth` 选项或子路径 URL：
+> **注意**：当前 `skills.sh` CLI 会发现本仓库的分类目录。如果仓库未来在根目录添加 `SKILL.md`，可使用 `--full-depth` 继续搜索所有子目录。也可直接使用子路径 URL 安装单个 skill：
 >
 > ```bash
 > # 直接指向 skill 子路径（推荐）
 > npx skills add https://github.com/Blushyes/skills/tree/main/skills/design/shadow-design
 >
-> # 或使用 full-depth 发现
+> # 如果根目录存在 SKILL.md，强制搜索所有子目录
 > npx skills add Blushyes/skills --full-depth
 > ```
 
@@ -53,11 +53,13 @@ skills/
 
 ```bash
 # 方式 A：使用官方 CLI 生成模板
-cd skills/
+mkdir -p skills/<category>
+cd skills/<category>/
 npx skills init <skill-name>
 
 # 方式 B：手动从模板拷贝
-cp -r templates/SKILL.md.template skills/<skill-name>/SKILL.md
+mkdir -p skills/<category>/<skill-name>
+cp templates/SKILL.md.template skills/<category>/<skill-name>/SKILL.md
 ```
 
 ## 当前收录的 skills
@@ -66,7 +68,11 @@ cp -r templates/SKILL.md.template skills/<skill-name>/SKILL.md
 
 ### 🎨 design
 
-- [**shadow-design**](./skills/design/shadow-design/SKILL.md) — CSS 阴影/elevation 设计指南：四条铁律、5 种性格配方（uniform/sharp/diffuse/dreamy/floating）、完整 elevation token、dark mode 三方案、反模式清单
+- [**shadow-design**](./skills/design/shadow-design/SKILL.md) - CSS 阴影/elevation 设计指南：四条铁律、5 种性格配方（uniform/sharp/diffuse/dreamy/floating）、完整 elevation token、dark mode 三方案、反模式清单
+
+### 📊 data
+
+- [**xquik-x-data**](./skills/data/xquik-x-data/SKILL.md) - Xquik 公开 X/Twitter 数据工作流指南，覆盖 REST API、SDK、MCP、webhook、搜索、账号资料、粉丝数据、趋势和 monitor route 选择
 
 <!-- skills-list:end -->
 
